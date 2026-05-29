@@ -5,7 +5,7 @@ st.set_page_config(page_title="마법의 소라고동", page_icon="🐚")
 
 answers = [
     "네",
-    "아니요",
+    "안돼",
     "아마도",
     "다시 물어보세요",
     "좋은 결과가 있을 거예요",
