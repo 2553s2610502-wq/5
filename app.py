@@ -1,69 +1,66 @@
 import streamlit as st
-import google.generativeai as genai
 
-# 페이지 설정
 st.set_page_config(
-    page_title="마법의 소라고동",
-    page_icon="🐚"
+    page_title="급식 대기시간 확인",
+    page_icon="🍽️",
+    layout="centered"
 )
 
-st.title("🐚 마법의 소라고동")
-st.write("질문을 입력하면 소라고동이 답해줍니다.")
+st.title("🍽️ 급식 대기시간 확인 시스템")
 
-# API 키 불러오기
+st.write("현재 대기 상황을 확인해보세요.")
+
+# 예외 처리
 try:
-    api_key = st.secrets["GEMINI_API_KEY"]
-    genai.configure(api_key=api_key)
+    current_number = st.number_input(
+        "현재 급식실에서 처리 중인 번호",
+        min_value=1,
+        value=20
+    )
 
-    model = genai.GenerativeModel("gemini-2.5-flash-lite")
+    my_number = st.number_input(
+        "내 대기번호",
+        min_value=1,
+        value=25
+    )
+
+    avg_time = st.number_input(
+        "1명당 평균 소요시간(초)",
+        min_value=1,
+        value=10
+    )
+
+    remaining_people = max(my_number - current_number, 0)
+    waiting_minutes = round((remaining_people * avg_time) / 60, 1)
+
+    st.subheader("📊 대기 현황")
+
+    if remaining_people == 0:
+        st.success("현재 입장 가능한 상태입니다!")
+    else:
+        st.info(f"내 앞에 {remaining_people}명 남았습니다.")
+        st.info(f"예상 대기시간: 약 {waiting_minutes}분")
+
+    st.divider()
+
+    st.subheader("🍱 오늘의 급식 메뉴")
+
+    menu = [
+        "쌀밥",
+        "된장찌개",
+        "치킨강정",
+        "계란말이",
+        "배추김치",
+        "요구르트"
+    ]
+
+    for item in menu:
+        st.write(f"• {item}")
+
+    st.divider()
+
+    st.caption("QR 코드를 통해 접속하여 실시간으로 대기시간을 확인할 수 있습니다.")
 
 except Exception as e:
-    st.error(f"API 설정 오류: {e}")
-    st.stop()
-
-# 채팅 기록 초기화
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-# 기존 채팅 표시
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-
-# 사용자 입력
-prompt = st.chat_input("질문을 입력하세요")
-
-if prompt:
-    # 사용자 메시지 저장
-    st.session_state.messages.append(
-        {"role": "user", "content": prompt}
-    )
-
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    try:
-        # 소라고동 전용 프롬프트
-        system_prompt = """
-        너는 '마법의 소라고동'이다.
-        사용자의 질문에 짧고 신비롭게 대답한다.
-        답변은 한두 문장 이내로 한다.
-        """
-
-        response = model.generate_content(
-            f"{system_prompt}\n\n사용자 질문: {prompt}"
-        )
-
-        answer = response.text.strip()
-
-    except Exception as e:
-        answer = f"오류가 발생했습니다: {e}"
-
-    # 응답 표시
-    with st.chat_message("assistant"):
-        st.markdown(answer)
-
-    # 기록 저장
-    st.session_state.messages.append(
-        {"role": "assistant", "content": answer}
-    )
+    st.error("오류가 발생했습니다.")
+    st.error(str(e))
