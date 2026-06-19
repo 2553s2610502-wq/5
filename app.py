@@ -116,4 +116,3 @@ if st.session_state.reservations:
     st.info(f"총 예약 인원: {len(st.session_state.reservations)}명")
 else:
     st.info("아직 예약한 학생이 없습니다.")
-    
