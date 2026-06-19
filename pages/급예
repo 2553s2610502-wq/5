@@ -7,7 +7,7 @@ st.set_page_config(
 )
 
 # =========================
-# 🎨 배경 & 스타일 CSS ([교정] 에러 원인이 되던 내부 주석 전부 제거)
+# 🎨 CSS
 # =========================
 st.markdown("""
 <style>
@@ -23,43 +23,19 @@ h1 {
     font-size: 40px;
 }
 
-.stMarkdown p {
-    text-align: center;
-    font-size: 18px;
-}
-
-div[data-baseweb="select"], input {
-    border-radius: 10px !important;
-}
-
 .stButton>button {
     background-color: #43A047;
     color: white;
     font-size: 18px;
     padding: 10px 20px;
     border-radius: 12px;
-    border: none;
     width: 100%;
-}
-
-.stButton>button:hover {
-    background-color: #2E7D32;
-    transform: scale(1.02);
-    transition: 0.2s;
-}
-
-.card {
-    background-color: white;
-    padding: 15px;
-    border-radius: 12px;
-    margin: 8px 0;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 </style>
 """, unsafe_allow_html=True)
 
 # =========================
-# 📌 앱 제목
+# 📌 제목
 # =========================
 st.title("🍽️ 급식 예약 시스템")
 st.write("오늘 급식을 먹을 학생은 정보를 입력하고 예약하세요!")
@@ -84,9 +60,15 @@ with st.form("reservation_form"):
 # ✅ 예약 처리
 # =========================
 if submit:
+    # ✔ float 방지 (핵심 수정)
+    classroom = int(classroom)
+    number = int(number)
+
     student_id = f"{grade}-{classroom}-{number}"
 
-    existing_ids = [item["id"] for item in st.session_state.reservations]
+    existing_ids = [
+        item.get("id") for item in st.session_state.reservations
+    ]
 
     if student_id in existing_ids:
         st.error("❌ 이미 예약한 학생입니다!")
@@ -108,7 +90,13 @@ st.subheader("📋 예약 현황")
 if st.session_state.reservations:
     for student in st.session_state.reservations:
         st.markdown(f"""
-        <div class="card">
+        <div style="
+            background:white;
+            padding:12px;
+            border-radius:12px;
+            margin:6px 0;
+            box-shadow:0 4px 10px rgba(0,0,0,0.1);
+        ">
             🍽️ {student['grade']}학년 {student['classroom']}반 {student['number']}번
         </div>
         """, unsafe_allow_html=True)
