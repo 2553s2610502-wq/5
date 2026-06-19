@@ -60,15 +60,13 @@ with st.form("reservation_form"):
 # ✅ 예약 처리
 # =========================
 if submit:
-    # ✔ float 방지 (핵심 수정)
     classroom = int(classroom)
     number = int(number)
 
     student_id = f"{grade}-{classroom}-{number}"
 
-    existing_ids = [
-        item.get("id") for item in st.session_state.reservations
-    ]
+    # ✔ set으로 중복 체크 (핵심 개선)
+    existing_ids = {item["id"] for item in st.session_state.reservations}
 
     if student_id in existing_ids:
         st.error("❌ 이미 예약한 학생입니다!")
@@ -79,6 +77,7 @@ if submit:
             "classroom": classroom,
             "number": number
         })
+
         st.success("✅ 예약 완료! 맛있는 급식 드세요 🍱")
 
 # =========================
