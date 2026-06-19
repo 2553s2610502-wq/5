@@ -2,9 +2,6 @@ import pandas as pd
 import datetime
 import streamlit as st
 
-# =====================
-# 페이지 설정
-# =====================
 st.set_page_config(
     page_title="급식줄 효율적 구축 시스템",
     page_icon="🍔",
@@ -14,28 +11,28 @@ st.set_page_config(
 # =====================
 # 세션 초기화
 # =====================
-if 'reports' not in st.session_state:
-    st.session_state.reports = pd.DataFrame(columns=['시간', '인원수', '혼잡도'])
+if "reports" not in st.session_state:
+    st.session_state.reports = pd.DataFrame(
+        columns=["시간", "인원수", "혼잡도"]
+    )
 
 # =====================
 # 타이틀
 # =====================
 st.title("🍔 스마트 급식줄 알림이")
-st.markdown("실시간 혼잡도를 확인하고 대기 시간을 예측하세요!")
+st.markdown("실시간 혼잡도 + 대기시간 예측 시스템")
 st.markdown("---")
 
 # =====================
-# 1. 현재 상태
+# 현재 상태
 # =====================
 st.subheader("📊 현재 식당 혼잡도")
 
-# ✔ 매번 최신 시간 반영
 now = datetime.datetime.now()
-current_time_str = now.strftime("%H:%M:%S")
 
 if not st.session_state.reports.empty:
     latest_report = st.session_state.reports.iloc[-1]
-    current_wait_people = int(latest_report['인원수'])
+    current_wait_people = int(latest_report["인원수"])
 else:
     current_wait_people = 15
 
@@ -43,17 +40,11 @@ avg_time_per_person_sec = 12
 estimated_wait_time = round((current_wait_people * avg_time_per_person_sec) / 60)
 
 if current_wait_people < 15:
-    status = "🟢 원활"
-    status_color = "green"
-    msg = "지금 바로 가도 괜찮습니다!"
+    status, status_color, msg = "🟢 원활", "green", "지금 바로 가도 됩니다!"
 elif current_wait_people <= 35:
-    status = "🟡 보통"
-    status_color = "orange"
-    msg = "약간의 대기가 있습니다."
+    status, status_color, msg = "🟡 보통", "orange", "약간 대기가 있습니다."
 else:
-    status = "🔴 혼잡"
-    status_color = "red"
-    msg = "줄이 매우 깁니다!"
+    status, status_color, msg = "🔴 혼잡", "red", "줄이 매우 깁니다!"
 
 col1, col2 = st.columns(2)
 
@@ -74,21 +65,23 @@ border-left:5px solid {status_color};">
 st.markdown("---")
 
 # =====================
-# 2. 제보 시스템
+# 제보 시스템
 # =====================
 st.subheader("✍️ 급식줄 제보")
 
 with st.form("report_form", clear_on_submit=True):
     reported_people = st.slider(
         "대기 인원수",
-        min_value=0,
-        max_value=80,
-        value=15
+        0, 80, 15
     )
 
     submit_button = st.form_submit_button("제보하기")
 
     if submit_button:
+
+        # ✔ 시간은 “클릭 시점” 기준
+        submit_time = datetime.datetime.now()
+
         if reported_people < 15:
             rep_status = "원활"
         elif reported_people <= 35:
@@ -96,34 +89,38 @@ with st.form("report_form", clear_on_submit=True):
         else:
             rep_status = "혼잡"
 
-        new_data = pd.DataFrame([{
-            '시간': now.strftime("%H:%M:%S"),
-            '인원수': int(reported_people),
-            '혼잡도': rep_status
+        new_row = pd.DataFrame([{
+            "시간": submit_time,   # ✔ datetime 그대로 저장 (핵심 개선)
+            "인원수": int(reported_people),
+            "혼잡도": rep_status
         }])
 
         st.session_state.reports = pd.concat(
-            [st.session_state.reports, new_data],
+            [st.session_state.reports, new_row],
             ignore_index=True
         )
 
         st.success("제보 완료!")
 
 # =====================
-# 3. 그래프
+# 그래프
 # =====================
 st.markdown("---")
 st.subheader("📈 대기 인원 추이")
 
 if not st.session_state.reports.empty:
+
     chart_data = st.session_state.reports.copy()
 
-    # ✔ 시간순 정렬 (핵심 개선)
+    # ✔ datetime 기준 정렬 (핵심 개선)
     chart_data = chart_data.sort_values(by="시간")
 
-    st.line_chart(chart_data.set_index("시간")["인원수"])
+    chart_data = chart_data.set_index("시간")
+
+    st.line_chart(chart_data["인원수"])
 
     with st.expander("전체 기록"):
-        st.dataframe(st.session_state.reports.tail(10), use_container_width=True)
+        st.dataframe(st.session_state.reports.tail(10))
+
 else:
     st.info("아직 데이터가 없습니다.")
