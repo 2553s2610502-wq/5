@@ -12,11 +12,13 @@ st.write("신고는 익명으로 처리되며 기록만 저장됩니다.")
 if "reports" not in st.session_state:
     st.session_state.reports = []
 
-if "report_count" not in st.session_state:
-    st.session_state.report_count = 0
+# ✔ 안전한 ID 생성 방식 (count 대신 len 기반)
+# → 초기화 꼬임 방지
+def get_next_id():
+    return len(st.session_state.reports) + 1
 
 # -----------------------------
-# 입력 (익명이므로 신고자 제거 권장)
+# 입력
 # -----------------------------
 target = st.text_input("새치기한 사람 이름").strip()
 
@@ -28,18 +30,16 @@ if st.button("익명 신고하기"):
     if not target:
         st.warning("이름을 입력하세요.")
     else:
-        st.session_state.report_count += 1
-
         now_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         new_report = {
-            "id": st.session_state.report_count,
+            "id": get_next_id(),
             "time": now_time,
             "target": target
         }
 
-        # ✔ 안전하게 리스트 재할당 방식 (중요)
-        st.session_state.reports = st.session_state.reports + [new_report]
+        # ✔ append 방식 (안정 + 표준)
+        st.session_state.reports.append(new_report)
 
         st.success("익명 신고가 접수되었습니다!")
 
