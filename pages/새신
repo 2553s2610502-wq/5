@@ -1,13 +1,13 @@
-import datetime  # [교정] 라이브러리 충돌 방지를 위해 전체 모듈 임포트
+import datetime
 import streamlit as st
 
 st.set_page_config(page_title="익명 새치기 신고 시스템")
 
 st.title("🚨 급식 새치기 익명 신고 시스템")
-st.write("신고자는 익명으로 처리되며 기록만 저장됩니다.")
+st.write("신고는 익명으로 처리되며 기록만 저장됩니다.")
 
 # -----------------------------
-# 데이터 저장
+# 데이터 초기화
 # -----------------------------
 if "reports" not in st.session_state:
     st.session_state.reports = []
@@ -16,35 +16,39 @@ if "report_count" not in st.session_state:
     st.session_state.report_count = 0
 
 # -----------------------------
-# 입력
+# 입력 (익명이므로 신고자 제거 권장)
 # -----------------------------
-reporter = st.text_input("신고자 이름 (기록에는 남지 않음)").strip()
 target = st.text_input("새치기한 사람 이름").strip()
 
+# -----------------------------
+# 신고 처리
+# -----------------------------
 if st.button("익명 신고하기"):
-    if not reporter or not target:
-        st.warning("모든 항목을 입력하세요.")
+
+    if not target:
+        st.warning("이름을 입력하세요.")
     else:
         st.session_state.report_count += 1
 
         now_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        st.session_state.reports.append({
+        new_report = {
             "id": st.session_state.report_count,
             "time": now_time,
             "target": target
-        })
+        }
 
-        st.success("익명으로 신고가 접수되었습니다!")
-        # [교정] 데이터 반영 즉시 화면을 갱신해 오작동을 차단합니다.
-        st.rerun()
+        # ✔ 안전하게 리스트 재할당 방식 (중요)
+        st.session_state.reports = st.session_state.reports + [new_report]
+
+        st.success("익명 신고가 접수되었습니다!")
 
 # -----------------------------
 # 신고 기록
 # -----------------------------
 st.subheader("📜 신고 기록")
 
-if len(st.session_state.reports) == 0:
+if not st.session_state.reports:
     st.info("아직 신고 기록이 없습니다.")
 else:
     for r in reversed(st.session_state.reports):
