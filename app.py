@@ -1,80 +1,94 @@
 import streamlit as st
+from datetime import datetime
 
-st.set_page_config(
-    page_title="급식 대기시간 안내",
-    page_icon="🍱",
-    layout="centered"
-)
+st.set_page_config(page_title="급식 QR 대기 시스템", layout="centered")
 
-st.title("🍱 급식 대기시간 안내")
+# -----------------------------
+# 초기 데이터 저장 (세션)
+# -----------------------------
+if "queue" not in st.session_state:
+    st.session_state.queue = []
 
-st.write("현재 배식 상황을 확인해보세요!")
+if "reports" not in st.session_state:
+    st.session_state.reports = []
 
-try:
-    current_number = st.number_input(
-        "현재 배식 중인 번호",
-        min_value=1,
-        value=50,
-        step=1
-    )
+# -----------------------------
+# 제목
+# -----------------------------
+st.title("🍱 급식 줄서기 QR 시스템")
+st.caption("대기 현황 확인 + 새치기 신고 기능")
 
-    my_number = st.number_input(
-        "내 번호",
-        min_value=1,
-        value=60,
-        step=1
-    )
+# -----------------------------
+# 대기 등록
+# -----------------------------
+st.subheader("📌 줄 서기 등록")
 
-    if my_number < current_number:
-        st.success("✅ 이미 차례가 지났거나 현재 배식 중입니다!")
+name = st.text_input("이름 입력")
 
-        progress = 100
-
+if st.button("줄 서기 등록"):
+    if name.strip() == "":
+        st.warning("이름을 입력하세요.")
     else:
-        remaining = my_number - current_number
+        if name in st.session_state.queue:
+            st.warning("이미 줄에 등록되어 있습니다.")
+        else:
+            st.session_state.queue.append(name)
+            st.success(f"{name}님이 줄에 등록되었습니다!")
 
-        wait_seconds = remaining * 15
-        wait_minutes = wait_seconds // 60
-        wait_remain_seconds = wait_seconds % 60
+# -----------------------------
+# 대기 현황
+# -----------------------------
+st.subheader("📊 현재 대기 현황")
 
-        st.subheader("📢 대기 현황")
+if len(st.session_state.queue) == 0:
+    st.info("현재 대기 인원이 없습니다.")
+else:
+    st.write(f"현재 대기 인원: **{len(st.session_state.queue)}명**")
 
-        st.metric(
-            label="남은 인원",
-            value=f"{remaining}명"
-        )
+    for i, person in enumerate(st.session_state.queue, start=1):
+        st.write(f"{i}. {person}")
 
-        st.metric(
-            label="예상 대기시간",
-            value=f"{wait_minutes}분 {wait_remain_seconds}초"
-        )
+# -----------------------------
+# 내 순번 확인
+# -----------------------------
+st.subheader("🔎 내 순번 확인")
 
-        progress = (current_number / my_number) * 100
-        progress = min(progress, 100)
+check_name = st.text_input("내 이름 입력 (순번 확인용)", key="check")
 
-    st.subheader("📊 진행 상황")
-    st.progress(int(progress))
-    st.write(f"진행률: {progress:.1f}%")
+if st.button("순번 확인"):
+    if check_name in st.session_state.queue:
+        idx = st.session_state.queue.index(check_name) + 1
+        st.success(f"{check_name}님의 순번은 {idx}번입니다.")
+    else:
+        st.warning("줄에 등록되어 있지 않습니다.")
 
-except Exception:
-    st.error("입력값을 확인해주세요.")
+# -----------------------------
+# 새치기 신고 기능
+# -----------------------------
+st.subheader("🚨 새치기 신고")
 
-st.divider()
+reporter = st.text_input("신고자 이름")
+target = st.text_input("신고 대상 이름")
 
-st.subheader("🍽️ 오늘의 급식")
+if st.button("신고하기"):
+    if reporter.strip() == "" or target.strip() == "":
+        st.warning("신고자와 대상 이름을 모두 입력하세요.")
+    else:
+        report = {
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "reporter": reporter,
+            "target": target
+        }
+        st.session_state.reports.append(report)
+        st.success("신고가 접수되었습니다.")
 
-menu = [
-    "쌀밥",
-    "된장찌개",
-    "돈까스",
-    "배추김치",
-    "샐러드",
-    "요구르트"
-]
+# -----------------------------
+# 신고 기록 출력
+# -----------------------------
+st.subheader("📜 신고 기록")
 
-for food in menu:
-    st.write(f"• {food}")
-
-st.divider()
-
-st.caption("학교 급식 대기시간 예측 서비스")
+if len(st.session_state.reports) == 0:
+    st.info("신고 기록이 없습니다.")
+else:
+    for r in reversed(st.session_state.reports):
+        st.write(f"[{r['time']}] {r['reporter']} → {r['target']} 신고")
