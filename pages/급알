@@ -2,14 +2,15 @@ import streamlit as st
 import random
 import datetime
 
-# ✅ 반드시 가장 먼저 Streamlit 설정
 st.set_page_config(
     page_title="오늘의 급식 & 알레르기 알리미",
     page_icon="🍱",
     layout="centered"
 )
 
-# 2. 샘플 데이터
+# ------------------------
+# 데이터
+# ------------------------
 MENUS_DATABASE = {
     "점심": [
         {"name": "돈가스", "allergies": ["대두", "밀", "돼지고기"]},
@@ -29,9 +30,9 @@ MENUS_DATABASE = {
 
 NUTRITION_TIPS = [
     "균형 잡힌 식사는 면역력을 높이는 가장 좋은 방법입니다! 💪",
-    "천천히 20번 이상 씹어 먹으면 소화와 두뇌 활동에 도움이 됩니다. 🧠",
-    "식사 후 바로 눕기보다는 10분 정도 가볍게 산책을 해보세요. 🚶‍♂️",
-    "물은 식사 직전보다는 식간에 자주 마시는 것이 좋습니다. 💧"
+    "천천히 20번 이상 씹어 먹으면 소화에 좋습니다. 🧠",
+    "식사 후 10분 산책이 도움이 됩니다. 🚶‍♂️",
+    "물은 식간에 자주 마시는 것이 좋습니다. 💧"
 ]
 
 ALLERGY_LIST = [
@@ -40,12 +41,16 @@ ALLERGY_LIST = [
     "닭고기", "쇠고기", "오징어", "조개류", "잣", "키위"
 ]
 
-# 3. 타이틀
+# ------------------------
+# 제목
+# ------------------------
 st.title("🍱 오늘의 급식 & 알레르기 알리미")
 st.caption("오늘의 메뉴를 확인하고 알레르기 위험을 체크하세요!")
 st.write("---")
 
-# 4. 사이드바
+# ------------------------
+# 사이드바
+# ------------------------
 st.sidebar.header("🔍 식단 조회 설정")
 
 selected_date = st.sidebar.date_input(
@@ -64,8 +69,12 @@ user_allergies = st.sidebar.multiselect(
     default=[]
 )
 
-# 5. 메인 화면
-st.subheader(f"📅 {selected_date.strftime('%Y년 %m월 %d일')} - {meal_type} 메뉴")
+user_allergies_set = set(user_allergies)  # ✔ 최적화
+
+# ------------------------
+# 메인
+# ------------------------
+st.subheader(f"📅 {selected_date.strftime('%Y년 %m월 %d일')} - {meal_type}")
 
 current_menu = MENUS_DATABASE.get(meal_type, [])
 
@@ -83,7 +92,7 @@ else:
             st.markdown(f"**• {item['name']}**")
 
         with col2:
-            overlap = set(item["allergies"]) & set(user_allergies)
+            overlap = set(item["allergies"]) & user_allergies_set
 
             if overlap:
                 st.error(f"⚠️ 주의 ({', '.join(overlap)})")
@@ -98,10 +107,15 @@ else:
 
     if detected_allergies:
         st.warning(
-            f"🚨 경고: 오늘 식단에 위험 성분 ({', '.join(detected_allergies)}) 포함!"
+            f"🚨 위험 성분: {', '.join(detected_allergies)}"
         )
     elif user_allergies:
-        st.success("✅ 선택한 알레르기 성분은 오늘 메뉴에 없습니다.")
+        st.success("✅ 선택한 알레르기 성분 없음")
 
-# 6. 영양 팁
-st.info(f"💡 오늘의 영양 Tip: {random.choice(NUTRITION_TIPS)}")
+# ------------------------
+# ✔ 영양 팁 (고정 저장)
+# ------------------------
+if "tip" not in st.session_state:
+    st.session_state.tip = random.choice(NUTRITION_TIPS)
+
+st.info(f"💡 오늘의 영양 Tip: {st.session_state.tip}")
